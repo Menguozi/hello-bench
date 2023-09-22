@@ -6,6 +6,10 @@ HelloBench is a new Docker benchmark focused on container startup latency.
 
 This git repo just contains the benchmark harness than runs various Docker images; it does not contain the images themselves.  One (not recommended) way to fetch the images is by using the hello.py script to pull the images from the Docker Hub:
 
+#### Docker Restart Instructions
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+
 ```./hello.py --registry= --op=pull --all```
 #### pull
 python2 ./hello.py --registry= --op=pull --all
