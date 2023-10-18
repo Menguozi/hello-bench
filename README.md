@@ -12,11 +12,11 @@ sudo systemctl restart docker
 
 ```./hello.py --registry= --op=pull --all```
 #### pull
-python2 ./hello.py --registry= --op=pull --all
+python2 ./hello.py --registry='' --op=pull --all
 #### run
-python2 ./hello.py --registry= --op=run --all
+python2 ./hello.py --registry='' --op=run --all
 #### tag
-python2 ./hello.py --registry2=menguozi --op=tag --all
+python2 ./hello.py --registry='' --registry2=menguozi --op=tag --all
 #### push
 python2 ./hello.py --registry=menguozi --op=push --all
 

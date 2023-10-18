@@ -198,6 +198,15 @@ class BenchRunner:
                 #  Bench('rails', 'web-framework'),
                  Bench('node', 'web-framework'),
                  Bench('iojs', 'web-framework'),
+                 Bench('nydus-ai-cat-or-dog-tensorflow', 'nydus'),
+                 Bench('nydus-cypress-chrome', 'nydus'),
+                 Bench('nydus-ml-small-import', 'nydus'),
+                 Bench('nydus-ml-large-import', 'nydus'),
+                 Bench('nydus-nodejs', 'nydus'),
+                 Bench('nydus-puppeteer-pdf', 'nydus'),
+                 Bench('nydus-python-flask', 'nydus'),
+                 Bench('openanolis-pytorch', 'openanolis'),
+                 Bench('openanolis-tensorflow', 'openanolis')
              ]])
 
     def __init__(self, docker='docker', registry='localhost:5000', registry2='localhost:5000'):
@@ -377,6 +386,7 @@ class BenchRunner:
 
     def push(self, bench):
         cmd = '%s push %s%s' % (self.docker, self.registry, bench.name)
+        print cmd
         rc = os.system(cmd)
         assert(rc == 0)
 
@@ -384,6 +394,7 @@ class BenchRunner:
         cmd = '%s tag %s%s %s%s' % (self.docker,
                                     self.registry, bench.name,
                                     self.registry2, bench.name)
+        print cmd
         rc = os.system(cmd)
         assert(rc == 0)
 
