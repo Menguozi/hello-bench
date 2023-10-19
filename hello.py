@@ -84,21 +84,22 @@ class BenchRunner:
                     'percona': RunArgs(env={'MYSQL_ROOT_PASSWORD': 'abc'},
                                      waitline='mysqld: ready for connections'),
                     'mariadb': RunArgs(env={'MYSQL_ROOT_PASSWORD': 'abc'},
-                                     waitline='mysqld: ready for connections'),
-                    'postgres': RunArgs(waitline='database system is ready to accept connections'),
-                    'redis': RunArgs(waitline='server is now ready to accept connections'),
-                    'crate': RunArgs(waitline='started'),
+                                     waitline='ready for connections'),
+                    'postgres': RunArgs(env={'POSTGRES_PASSWORD': 'password'},
+                                        waitline='database system is ready to accept connections'),
+                    'redis': RunArgs(waitline='Ready to accept connections'),
+                    'crate': RunArgs(waitline='closed'),
                     'rethinkdb': RunArgs(waitline='Server ready'),
-                    'ghost': RunArgs(waitline='Listening on'),
+                    'ghost': RunArgs(waitline='Ghost booted'),
                     'glassfish': RunArgs(waitline='Running GlassFish'),
                     'drupal': RunArgs(waitline='apache2 -D FOREGROUND'),
                     'elasticsearch': RunArgs(waitline='] started'),
-                    'cassandra': RunArgs(waitline='Listening for thrift clients'),
+                    'cassandra': RunArgs(waitline='Starting listening for CQL clients'),
                     'httpd': RunArgs(waitline='httpd -D FOREGROUND'),
                     'jenkins': RunArgs(waitline='Jenkins is fully up and running'),
                     'jetty': RunArgs(waitline='main: Started'),
-                    'mongo': RunArgs(waitline='waiting for connections'),
-                    'php-zendserver': RunArgs(waitline='Zend Server started'),
+                    'mongo': RunArgs(waitline='error'),
+                    'php-zendserver': RunArgs(waitline='Zend Server is ready for use'),
                     'rabbitmq': RunArgs(waitline='Server startup complete'),
                     'sonarqube': RunArgs(waitline='Process[web] is up'),
                     'tomcat': RunArgs(waitline='Server startup'),
@@ -156,10 +157,10 @@ class BenchRunner:
                  Bench('mageia', 'distro'),
                  Bench('mysql', 'database'),
                  Bench('percona', 'database'),
-                #  Bench('mariadb', 'database'),
-                #  Bench('postgres', 'database'),
-                #  Bench('redis', 'database'),
-                #  Bench('crate', 'database'),
+                 Bench('mariadb', 'database'),
+                 Bench('postgres', 'database'),
+                 Bench('redis', 'database'),
+                 Bench('crate', 'database'),
                  Bench('rethinkdb', 'database'),
                  Bench('php', 'language'),
                  Bench('ruby', 'language'),
@@ -178,11 +179,11 @@ class BenchRunner:
                  Bench('r-base', 'language'),
                  Bench('gcc', 'language'),
                  Bench('thrift', 'language'),
-                #  Bench('cassandra', 'database'),
-                #  Bench('mongo', 'database'),
+                 Bench('cassandra', 'database'),
+                 Bench('mongo', 'database'),
                  Bench('elasticsearch', 'database'),
                  Bench('hello-world'),
-                #  Bench('ghost'),
+                 Bench('ghost'),
                  Bench('drupal'),
                  Bench('jenkins'),
                  Bench('sonarqube'),
@@ -192,10 +193,10 @@ class BenchRunner:
                  Bench('nginx', 'web-server'),
                  Bench('glassfish', 'web-server'),
                  Bench('jetty', 'web-server'),
-                #  Bench('php-zendserver', 'web-server'),
+                 Bench('php-zendserver', 'web-server'),
                  Bench('tomcat', 'web-server'),
                  Bench('django', 'web-framework'),
-                #  Bench('rails', 'web-framework'),
+                 Bench('rails', 'web-framework'),
                  Bench('node', 'web-framework'),
                  Bench('iojs', 'web-framework'),
                  Bench('nydus-ai-cat-or-dog-tensorflow', 'nydus'),
@@ -220,6 +221,7 @@ class BenchRunner:
         
     def run_echo_hello(self, repo):
         cmd = '%s run %s%s echo hello' % (self.docker, self.registry, repo)
+        print 'cmd: %s' % cmd
         rc = os.system(cmd)
         assert(rc == 0)
 
@@ -228,16 +230,17 @@ class BenchRunner:
         cmd = '%s run ' % self.docker
         cmd += '%s%s ' % (self.registry, repo)
         cmd += runargs.arg
-        print cmd
+        print 'cmd: %s' % cmd
         rc = os.system(cmd)
         assert(rc == 0)
 
     def run_cmd_arg_wait(self, repo, runargs):
         name = '%s_bench_%d' % (repo, random.randint(1,1000000))
         env = ' '.join(['-e %s=%s' % (k,v) for k,v in runargs.env.iteritems()])
+        print 'env: %s' % env
         cmd = ('%s run --name=%s %s %s%s %s' %
                (self.docker, name, env, self.registry, repo, runargs.arg))
-        print cmd
+        print 'cmd: %s' % cmd
         # line buffer output
         p = subprocess.Popen(cmd, shell=True, bufsize=1,
                              stderr=subprocess.STDOUT,
@@ -252,6 +255,7 @@ class BenchRunner:
                 # cleanup
                 print 'DONE'
                 cmd = '%s kill %s' % (self.docker, name)
+                print 'cmd: %s' % cmd
                 rc = os.system(cmd)
                 assert(rc == 0)
                 break
@@ -267,7 +271,7 @@ class BenchRunner:
         if runargs.stdin_sh:
             cmd += runargs.stdin_sh # e.g., sh -c
 
-        print cmd
+        print 'cmd: %s' % cmd
         p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         print runargs.stdin
         out,_ = p.communicate(runargs.stdin)
@@ -278,7 +282,7 @@ class BenchRunner:
     def run_nginx(self):
         name = 'nginx_bench_%d' % (random.randint(1,1000000))
         cmd = '%s run --name=%s -p %d:%d %snginx' % (self.docker, name, NGINX_PORT, 80, self.registry)
-        print cmd
+        print 'cmd: %s' % cmd
         p = subprocess.Popen(cmd, shell=True)
         while True:
             try:
@@ -289,6 +293,7 @@ class BenchRunner:
                 time.sleep(0.01) # wait 10ms
                 pass # retry
         cmd = '%s kill %s' % (self.docker, name)
+        print 'cmd: %s' % cmd
         rc = os.system(cmd)
         assert(rc == 0)
         p.wait()
@@ -301,18 +306,19 @@ class BenchRunner:
         b = '/src'
         cmd += '-v %s:%s ' % (a, b)
         cmd += '%siojs iojs /src/index.js' % self.registry
-        print cmd
+        print 'cmd: %s' % cmd
         p = subprocess.Popen(cmd, shell=True)
         while True:
             try:
                 req = urllib2.urlopen('http://localhost:%d'%IOJS_PORT)
-                print req.read().strip()
+                # print req.read().strip()
                 req.close()
                 break
             except:
                 time.sleep(0.01) # wait 10ms
                 pass # retry
         cmd = '%s kill %s' % (self.docker, name)
+        print 'cmd: %s' % cmd
         rc = os.system(cmd)
         assert(rc == 0)
         p.wait()
@@ -325,18 +331,19 @@ class BenchRunner:
         b = '/src'
         cmd += '-v %s:%s ' % (a, b)
         cmd += '%snode node /src/index.js' % self.registry
-        print cmd
+        print 'cmd: %s' % cmd
         p = subprocess.Popen(cmd, shell=True)
         while True:
             try:
                 req = urllib2.urlopen('http://localhost:%d'%NODE_PORT)
-                print req.read().strip()
+                # print req.read().strip()
                 req.close()
                 break
             except:
                 time.sleep(0.01) # wait 10ms
                 pass # retry
         cmd = '%s kill %s' % (self.docker, name)
+        print 'cmd: %s' % cmd
         rc = os.system(cmd)
         assert(rc == 0)
         p.wait()
@@ -346,7 +353,7 @@ class BenchRunner:
         cmd = '%s run --name=%s -p %d:%d ' % (self.docker, name, REGISTRY_PORT, 5000)
         cmd += '-e GUNICORN_OPTS=["--preload"] '
         cmd += '%sregistry' % self.registry
-        print cmd
+        print 'cmd: %s' % cmd
         p = subprocess.Popen(cmd, shell=True)
         while True:
             try:
@@ -358,6 +365,7 @@ class BenchRunner:
                 time.sleep(0.01) # wait 10ms
                 pass # retry
         cmd = '%s kill %s' % (self.docker, name)
+        print 'cmd: %s' % cmd
         rc = os.system(cmd)
         assert(rc == 0)
         p.wait()
@@ -365,14 +373,19 @@ class BenchRunner:
     def run(self, bench):
         name = bench.name
         if name in BenchRunner.ECHO_HELLO:
+            print name
             self.run_echo_hello(repo=name)
         elif name in BenchRunner.CMD_ARG:
+            print name
             self.run_cmd_arg(repo=name, runargs=BenchRunner.CMD_ARG[name])
         elif name in BenchRunner.CMD_ARG_WAIT:
+            print name
             self.run_cmd_arg_wait(repo=name, runargs=BenchRunner.CMD_ARG_WAIT[name])
         elif name in BenchRunner.CMD_STDIN:
+            print name
             self.run_cmd_stdin(repo=name, runargs=BenchRunner.CMD_STDIN[name])
         elif name in BenchRunner.CUSTOM:
+            print name
             fn = BenchRunner.__dict__[BenchRunner.CUSTOM[name]]
             fn(self)
         else:
